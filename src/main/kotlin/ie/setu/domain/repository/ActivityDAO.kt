@@ -58,14 +58,15 @@ class ActivityDAO {
     }
 
     // Update an activity in the database
-    fun updateByActivityId(activityId: Int, activity: Activity){
+    fun updateByActivityId(activityId: Int, activityDTO: Activity){
         transaction {
-            Activities.update({ Activities.id eq activityId }) {
-                it[description] = activity.description
-                it[duration] = activity.duration
-                it[started] = activity.started
-                it[calories] = activity.calories
-                it[userId] = activity.userId
+            Activities.update ({
+                Activities.id eq activityId}) {
+                it[description] = activityDTO.description
+                it[duration] = activityDTO.duration
+                it[started] = activityDTO.started
+                it[calories] = activityDTO.calories
+                it[userId] = activityDTO.userId
             }
         }
     }
