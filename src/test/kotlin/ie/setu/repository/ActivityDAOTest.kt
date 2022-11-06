@@ -38,7 +38,7 @@ class ActivityDAOTest {
         fun `multiple activities added to table can be retrieved successfully`() {
             transaction {
                 //Arrange - create and populate tables with three users and three activities
-                val userDAO = populateUserTable()
+                populateUserTable()
                 val activityDAO = populateActivityTable()
                 //Act & Assert
                 assertEquals(3, activityDAO.getAll().size)

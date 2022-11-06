@@ -1,7 +1,7 @@
 package ie.setu.controllers
 
 import ie.setu.config.DbConfig
-import ie.setu.controllers.HealthTrackerController.updateUser
+
 import ie.setu.domain.User
 import org.junit.jupiter.api.TestInstance
 
@@ -13,21 +13,21 @@ import ie.setu.helpers.*
 import ie.setu.utils.jsonToObject
 import kong.unirest.HttpResponse
 import kong.unirest.JsonNode
+
 import org.junit.jupiter.api.Assertions.assertNotEquals
 import org.junit.jupiter.api.Nested
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class HealthTrackerControllerTest {
-
     private val db = DbConfig().getDbConnection()
     private val app = ServerContainer.instance
-    private val origin = "http://localhost:" + app.port()
+    val origin = "http://localhost:" + app.port()
 
     @Nested
     inner class ReadUsers {
         @Test
         fun `get all users from the database returns 200 or 404 response`() {
-            val response = Unirest.get(origin + "/api/users/").asString()
+            val response = retrieveAllUsers()
             if (response.status == 200) {
                 val retrievedUsers: ArrayList<User> = jsonToObject(response.body.toString())
                 assertNotEquals(0, retrievedUsers.size)
@@ -41,10 +41,10 @@ class HealthTrackerControllerTest {
         fun `get user by id when user does not exist returns 404 response`() {
 
             //Arrange - test data for user id
-            val id = Integer.MIN_VALUE
+            val id = nonExistingUserId
 
             // Act - attempt to retrieve the non-existent user from the database
-            val retrieveResponse = Unirest.get(origin + "/api/users/${id}").asString()
+            val  retrieveResponse = retrieveUserById(id)
 
             // Assert -  verify return code
             assertEquals(404, retrieveResponse.status)
@@ -53,7 +53,7 @@ class HealthTrackerControllerTest {
         @Test
         fun `get user by email when user does not exist returns 404 response`() {
             // Arrange & Act - attempt to retrieve the non-existent user from the database
-            val retrieveResponse = Unirest.get(origin + "/api/users/email/${nonExistingEmail}").asString()
+            val retrieveResponse = retrieveUserByEmail(nonExistingEmail)
             // Assert -  verify return code
             assertEquals(404, retrieveResponse.status)
         }
@@ -166,31 +166,37 @@ class HealthTrackerControllerTest {
         }
     }
 
+    //Helper methods
+    //helper function to get all users from the database
+    private fun retrieveAllUsers(): HttpResponse<JsonNode> {
+        return Unirest.get("$origin/api/users/").asJson()
+    }
+
     //helper function to add a test user to the database
-    private fun addUser (name: String, email: String): HttpResponse<JsonNode> {
-        return Unirest.post(origin + "/api/users")
+    fun addUser (name: String, email: String): HttpResponse<JsonNode> {
+        return Unirest.post("$origin/api/users")
             .body("{\"name\":\"$name\", \"email\":\"$email\"}")
             .asJson()
     }
 
     //helper function to delete a test user from the database
-    private fun deleteUser (id: Int): HttpResponse<String> {
-        return Unirest.delete(origin + "/api/users/$id").asString()
+    fun deleteUser (id: Int): HttpResponse<String> {
+        return Unirest.delete("$origin/api/users/$id").asString()
     }
 
     //helper function to retrieve a test user from the database by email
-    private fun retrieveUserByEmail(email : String) : HttpResponse<String> {
+    fun retrieveUserByEmail(email : String) : HttpResponse<String> {
         return Unirest.get(origin + "/api/users/email/${email}").asString()
     }
 
     //helper function to retrieve a test user from the database by id
-    private fun retrieveUserById(id: Int) : HttpResponse<String> {
+    fun retrieveUserById(id: Int) : HttpResponse<String> {
         return Unirest.get(origin + "/api/users/${id}").asString()
     }
 
     //helper function to add a test user to the database
-    private fun updateUser (id: Int, name: String, email: String): HttpResponse<JsonNode> {
-        return Unirest.patch(origin + "/api/users/$id")
+    fun updateUser (id: Int, name: String, email: String): HttpResponse<JsonNode> {
+        return Unirest.patch("$origin/api/users/$id")
             .body("{\"name\":\"$name\", \"email\":\"$email\"}")
             .asJson()
     }

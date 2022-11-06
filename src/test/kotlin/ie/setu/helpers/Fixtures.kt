@@ -9,11 +9,12 @@ import ie.setu.domain.repository.UserDAO
 import org.jetbrains.exposed.sql.SchemaUtils
 import org.joda.time.DateTime
 
-val nonExistingEmail = "112233445566778testUser@xxxxx.xx"
-val validName = "Test User 1"
-val validEmail = "testuser1@test.com"
-val updatedName = "Updated Name"
-val updatedEmail = "Updated Email"
+val nonExistingUserId = Integer.MIN_VALUE
+const val nonExistingEmail = "112233445566778testUser@xxxxx.xx"
+const val validName = "Test User 1"
+const val validEmail = "testuser1@test.com"
+const val updatedName = "Updated Name"
+const val updatedEmail = "Updated Email"
 
 
 val users = arrayListOf<User>(
