@@ -3,7 +3,7 @@ package ie.setu.domain.repository
 import ie.setu.domain.User
 import ie.setu.domain.db.Users
 import ie.setu.utils.mapToUser
-import org.jetbrains.exposed.sql.selectAll
+import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.transactions.transaction
 
 
@@ -19,26 +19,44 @@ class UserDAO {
     }
 
     fun findById(id: Int): User?{
-        return null
+        return transaction {
+            Users.select() {
+                Users.id eq id}
+                .map{mapToUser(it)}
+                .firstOrNull()
+        }
     }
 
     fun findByEmail(email: String): User?{
-        return null
+        return transaction {
+            Users.select() {
+                Users.email eq email}
+                .map{mapToUser(it)}
+                .firstOrNull()
+        }
     }
 
     fun update(id: Int, user: User) {
-//        val userToUpdate = findById(id)
-//        if (userToUpdate != null) {
-//            userToUpdate.name = user.name
-//            userToUpdate.email = user.email
-//        }
+        transaction {
+            Users.update({ Users.id eq id }) {
+                it[name] = user.name
+                it[email] = user.email
+            }
+        }
     }
 
     fun delete(id: Int){
-//        users.removeIf {it.id == id}
+        return transaction {
+            Users.deleteWhere { Users.id eq id }
+        }
     }
 
     fun save(user: User){
-//        users.add(user)
+        transaction {
+            Users.insert {
+                it[name] = user.name
+                it[email] = user.email
+            }
+        }
     }
 }
