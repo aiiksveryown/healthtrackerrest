@@ -9,6 +9,7 @@ import io.javalin.plugin.openapi.OpenApiOptions
 import io.javalin.plugin.openapi.OpenApiPlugin
 import io.javalin.plugin.openapi.ui.ReDocOptions
 import io.javalin.plugin.openapi.ui.SwaggerOptions
+import io.javalin.plugin.rendering.vue.VueComponent
 import io.swagger.v3.oas.models.info.Info
 
 class JavalinConfig {
@@ -22,16 +23,16 @@ class JavalinConfig {
         }.apply {
             exception(Exception::class.java) { e, _ -> e.printStackTrace() }
             error(404) { ctx -> ctx.json("404 - Not Found") }
-        }.start(getHerokuAssignedPort())
+        }.start(getRemoteAssignedPort())
 
         registerRoutes(app)
         return app
     }
 
-    private fun getHerokuAssignedPort(): Int {
-        val herokuPort = System.getenv("PORT")
-        return if (herokuPort != null) {
-            Integer.parseInt(herokuPort)
+    private fun getRemoteAssignedPort(): Int {
+        val remotePort = System.getenv("PORT")
+        return if (remotePort != null) {
+            Integer.parseInt(remotePort)
         } else 7000
     }
 
@@ -62,6 +63,14 @@ class JavalinConfig {
                     patch(ActivityController::updateActivity)
                 }
             }
+            // The @routeComponent that we added in layout.html earlier will be replaced
+            // by the String inside VueComponent. This means a call to / will load
+            // the layout and display our <home-page> component.
+            get("/", VueComponent("<home-page></home-page>"))
+            get("/users", VueComponent("<user-overview></user-overview>"))
+            get("/users/{user-id}", VueComponent("<user-profile></user-profile>"))
+            get("/users/{user-id}/activities", VueComponent("<user-activity-overview></user-activity-overview>"))
+            get("/activities", VueComponent("<activity-overview></activity-overview>"))
         }
     }
 
