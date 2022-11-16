@@ -1,6 +1,7 @@
 package ie.setu.controllers
 
 import ie.setu.config.DbConfig
+import ie.setu.domain.Activity
 
 import ie.setu.domain.User
 import org.junit.jupiter.api.TestInstance
@@ -13,15 +14,16 @@ import ie.setu.helpers.*
 import ie.setu.utils.jsonToObject
 import kong.unirest.HttpResponse
 import kong.unirest.JsonNode
+import org.joda.time.DateTime
 
 import org.junit.jupiter.api.Assertions.assertNotEquals
 import org.junit.jupiter.api.Nested
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-class HealthTrackerControllerTest {
-    private val db = DbConfig().getDbConnection()
+open class HealthTrackerControllerTest {
+    val db = DbConfig().getDbConnection()
     private val app = ServerContainer.instance
-    val origin = "http://localhost:" + app.port()
+    private val origin = "http://localhost:" + app.port()
 
     @Nested
     inner class ReadUsers {
@@ -41,7 +43,7 @@ class HealthTrackerControllerTest {
         fun `get user by id when user does not exist returns 404 response`() {
 
             //Arrange - test data for user id
-            val id = nonExistingUserId
+            val id = nonExistingId
 
             // Act - attempt to retrieve the non-existent user from the database
             val  retrieveResponse = retrieveUserById(id)
@@ -154,7 +156,7 @@ class HealthTrackerControllerTest {
         @Test
         fun `deleting a user when it exists, returns a 204 response`() {
 
-            //Arrange - add the user that we plan to do a delete on
+            //Arrange - add the user that we plan to delete
             val addedResponse = addUser(validName, validEmail)
             val addedUser : User = jsonToObject(addedResponse.body.toString())
 
@@ -163,6 +165,211 @@ class HealthTrackerControllerTest {
 
             //Act & Assert - attempt to retrieve the deleted user --> 404 response
             assertEquals(404, retrieveUserById(addedUser.id).status)
+        }
+    }
+
+    @Nested
+    inner class CreateActivities {
+        //   post(  "/api/activities", HealthTrackerController::addActivity)
+        @Test
+        fun `add an activity with correct details returns a 201 response`() {
+
+            //Arrange - add the user that we plan to do an add activity on
+            val addedResponse = addUser(validName, validEmail)
+            val addedUser : User = jsonToObject(addedResponse.body.toString())
+
+            //Act & Assert - add the activity and verify return code (using fixture data)
+            val addResponse = addActivity(addedUser.id, validActivityDescription, validActivityDuration, validActivityCalories, validActivityStarted )
+            val addedActivity : Activity = jsonToObject(addResponse.body.toString())
+
+            assertEquals(201, addResponse.status)
+
+            //Assert - retrieve the added activity from the database and verify return code
+            val retrieveResponse= retrieveActivityById(addedActivity.id)
+
+            assertEquals(200, retrieveResponse.status)
+
+            //Assert - verify the contents of the retrieved activity
+            val retrievedActivity : Activity = jsonToObject(addResponse.body.toString())
+            assertEquals(validActivityDescription, retrievedActivity.description)
+            assertEquals(validActivityCalories, retrievedActivity.calories)
+            assertEquals(validActivityDuration, retrievedActivity.duration)
+            assertEquals(addedUser.id, retrievedActivity.userId)
+
+            //After - restore the db to previous state by deleting the added user
+            val deleteResponse = deleteUser(addedUser.id)
+            assertEquals(204, deleteResponse.status)
+        }
+    }
+
+    @Nested
+    inner class ReadActivities {
+        //   get(   "/api/users/:user-id/activities", HealthTrackerController::getActivitiesByUserId)
+        @Test
+        fun `getting activities by user id when user id exists, returns a 200 response`() {
+
+            //Arrange - add the user
+            val addResponse = addUser(validName, validEmail)
+            val addedUser : User = jsonToObject(addResponse.body.toString())
+
+            //Act & Assert - add the activity and verify return code (using fixture data)
+            addActivity(addedUser.id, validActivityDescription, validActivityDuration, validActivityCalories, validActivityStarted )
+
+            //Assert - retrieve the added user's activities from the database and verify return code
+            val retrieveResponse= retrieveActivitiesByUserId(addedUser.id)
+
+            assertEquals(200, retrieveResponse.status)
+
+            //After - restore the db to previous state by deleting the added user
+            deleteUser(addedUser.id)
+        }
+
+        @Test
+        fun `getting activities by user id when user id doesn't exist, returns a 404 response`() {
+
+            //Assert - retrieve the added user's activities from the database and verify return code
+            val retrieveResponse= retrieveActivitiesByUserId(nonExistingId)
+
+            assertEquals(404, retrieveResponse.status)
+        }
+
+        @Test
+        fun `getting activities by user id when there are no activities for the user, returns a 204 response`() {
+
+            //Arrange - add the user
+            val addResponse = addUser(validName, validEmail)
+            val addedUser : User = jsonToObject(addResponse.body.toString())
+
+            //Assert - retrieve the added user's activities from the database and verify return code
+            val retrieveResponse= retrieveActivitiesByUserId(addedUser.id)
+
+            assertEquals(204, retrieveResponse.status)
+
+            //After - restore the db to previous state by deleting the added user
+            deleteUser(addedUser.id)
+        }
+
+        //   get(   "/api/activities", HealthTrackerController::getAllActivities)
+        @Test
+        fun `getting all activities when there are activities, returns a 200 response`() {
+
+            //Arrange - add the user
+            val addResponse = addUser(validName, validEmail)
+            val addedUser : User = jsonToObject(addResponse.body.toString())
+
+            //Act & Assert - add the activity and verify return code (using fixture data)
+            addActivity(addedUser.id, validActivityDescription, validActivityDuration, validActivityCalories, validActivityStarted )
+
+            //Assert - retrieve the added user's activities from the database and verify return code
+            val retrieveResponse= retrieveAllActivities()
+
+            assertEquals(200, retrieveResponse.status)
+
+            //After - restore the db to previous state by deleting the added user
+            deleteUser(addedUser.id)
+        }
+
+        //   get(   "/api/activities/:activity-id", HealthTrackerController::getActivitiesByActivityId)
+        @Test
+        fun `getting activities by activity id when activity id exists, returns a 200 response`() {
+            //Arrange - add the user
+            val addResponse = addUser(validName, validEmail)
+            val addedUser : User = jsonToObject(addResponse.body.toString())
+
+            //Act & Assert - add the activity and verify return code (using fixture data)
+            val addActivityResponse = addActivity(addedUser.id, validActivityDescription, validActivityDuration, validActivityCalories, validActivityStarted )
+            val addedActivity : Activity = jsonToObject(addActivityResponse.body.toString())
+
+            //Assert - retrieve the added user's activities from the database and verify return code
+            val retrieveResponse= retrieveActivityById(addedActivity.id)
+
+            assertEquals(200, retrieveResponse.status)
+
+            //After - restore the db to previous state by deleting the added user
+            deleteUser(addedUser.id)
+        }
+
+        @Test
+        fun `getting activities by activity id when activity id doesn't exist, returns a 404 response`() {
+            //Assert - retrieve the added user's activities from the database and verify return code
+            val retrieveResponse= retrieveActivityById(nonExistingId)
+
+            assertEquals(404, retrieveResponse.status)
+        }
+    }
+
+    @Nested
+    inner class UpdateActivities {
+        //  patch( "/api/activities/:activity-id", HealthTrackerController::updateActivity)
+        @Test
+        fun `updating an activity with correct details returns a 204 response`() {
+            //Arrange - add the user
+            val addResponse = addUser(validName, validEmail)
+            val addedUser : User = jsonToObject(addResponse.body.toString())
+
+            //Act & Assert - add the activity and verify return code (using fixture data)
+            val addActivityResponse = addActivity(addedUser.id, validActivityDescription, validActivityDuration, validActivityCalories, validActivityStarted )
+            val addedActivity : Activity = jsonToObject(addActivityResponse.body.toString())
+
+            //Act - update the activity
+            val updateResponse = updateActivity(addedUser.id, addedActivity.id, updatedActivityDescription, updatedActivityDuration, updatedActivityCalories, validActivityStarted )
+
+            assertEquals(204, updateResponse.status)
+
+            //After - restore the db to previous state by deleting the added user
+            deleteUser(addedUser.id)
+        }
+
+        @Test
+        fun `updating an activity that doesn't exist returns a 404 response`() {
+
+            //Act - update the activity
+            val updateResponse = updateActivity(nonExistingId, nonExistingId, updatedActivityDescription, updatedActivityDuration, updatedActivityCalories, updatedActivityStarted )
+
+            assertEquals(404, updateResponse.status)
+        }
+    }
+
+    @Nested
+    inner class DeleteActivities {
+        //   delete("/api/activities/:activity-id", HealthTrackerController::deleteActivityByActivityId)
+        @Test
+        fun `deleting an activity with correct details returns a 204 response`() {
+            //Arrange - add the user
+            val addResponse = addUser(validName, validEmail)
+            val addedUser : User = jsonToObject(addResponse.body.toString())
+
+            //Act & Assert - add the activity and verify return code (using fixture data)
+            val addActivityResponse = addActivity(addedUser.id, validActivityDescription, validActivityDuration, validActivityCalories, validActivityStarted )
+            val addedActivity : Activity = jsonToObject(addActivityResponse.body.toString())
+
+            //Act - delete the activity
+            val deleteResponse = deleteActivityByActivityId(addedActivity.id)
+
+            assertEquals(204, deleteResponse.status)
+
+            //After - restore the db to previous state by deleting the added user
+            deleteUser(addedUser.id)
+        }
+
+        //   delete("/api/users/:user-id/activities", HealthTrackerController::deleteActivityByUserId)
+        @Test
+        fun `deleting all activities for a user with correct details returns a 204 response`() {
+            //Arrange - add the user
+            val addResponse = addUser(validName, validEmail)
+            val addedUser : User = jsonToObject(addResponse.body.toString())
+
+            //Act & Assert - add the activity
+            addActivity(addedUser.id, validActivityDescription, validActivityDuration, validActivityCalories, validActivityStarted )
+
+            //Act - delete the activity
+            val deleteResponse = deleteActivitiesByUserId(addedUser.id)
+
+            // assert
+            assertEquals(204, deleteResponse.status)
+
+            //After - restore the db to previous state by deleting the added user
+            deleteUser(addedUser.id)
         }
     }
 
@@ -199,5 +406,44 @@ class HealthTrackerControllerTest {
         return Unirest.patch("$origin/api/users/$id")
             .body("{\"name\":\"$name\", \"email\":\"$email\"}")
             .asJson()
+    }
+
+    //helper function to add a test activity to the database
+    fun addActivity (userId: Int, description: String, duration: Double, calories: Int, started: DateTime): HttpResponse<JsonNode> {
+        return Unirest.post("$origin/api/activities")
+            .body("{\"userId\":\"$userId\", \"description\":\"$description\", \"duration\":\"$duration\", \"calories\":\"$calories\", \"started\":\"$started\"}")
+            .asJson()
+    }
+
+    //helper function to retrieve a test activity from the database by id
+    fun retrieveActivityById(activityId: Int) : HttpResponse<String> {
+        return Unirest.get(origin + "/api/activities/${activityId}").asString()
+    }
+
+    //helper function to retrieve all activities for a user from the database by user id
+    fun retrieveActivitiesByUserId(userId: Int) : HttpResponse<String> {
+        return Unirest.get(origin + "/api/users/${userId}/activities").asString() // ###
+    }
+
+    //helper function to retrieve all activities from the database
+    fun retrieveAllActivities() : HttpResponse<String> {
+        return Unirest.get("$origin/api/activities").asString()
+    }
+
+    //helper function to update a test activity in the database
+    fun updateActivity (userId: Int, activityId: Int, description: String, duration: Double, calories: Int, started: DateTime): HttpResponse<JsonNode> {
+        return Unirest.patch("$origin/api/activities/$activityId")
+            .body("{\"userId\":\"$userId\", \"description\":\"$description\", \"duration\":\"$duration\", \"calories\":\"$calories\", \"started\":\"$started\"}")
+            .asJson()
+    }
+
+    //helper function to delete a test activity from the database by activity id
+    fun deleteActivityByActivityId (activityId: Int): HttpResponse<String> {
+        return Unirest.delete("$origin/api/activities/$activityId").asString()
+    }
+
+    //helper function to delete activities from the database by user id
+    fun deleteActivitiesByUserId (userId: Int): HttpResponse<String> {
+        return Unirest.delete("$origin/api/users/$userId/activities").asString()
     }
 }

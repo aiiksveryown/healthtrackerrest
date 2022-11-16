@@ -59,8 +59,11 @@ object ActivityController {
                 ctx.status(200)
             }
             else {
-                ctx.status(404)
+                ctx.status(204)
             }
+        }
+        else {
+            ctx.status(404)
         }
     }
 
@@ -77,13 +80,8 @@ object ActivityController {
         //mapper handles the serialisation of Joda date into a String.
         val activity : Activity = jsonToObject(ctx.body())
         val activityId = activityDAO.save(activity)
-        if (activityId != null) {
-            ctx.status(201)
-            ctx.json(activity)
-        }
-        else {
-            ctx.status(400)
-        }
+        activity.id = activityId
+        ctx.status(201).json(activity)
     }
 
     @OpenApi(
@@ -134,7 +132,7 @@ object ActivityController {
         pathParams = [OpenApiParam("user-id", Int::class, "The User ID")],
         responses = [OpenApiResponse("204")]
     )
-    fun deleteActivityByUserId(ctx: Context){
+    fun deleteActivitiesByUserId(ctx: Context){
         if (activityDAO.deleteByUserId(ctx.pathParam("user-id").toInt()) != 0)
             ctx.status(204)
         else

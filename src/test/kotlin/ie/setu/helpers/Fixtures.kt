@@ -9,13 +9,21 @@ import ie.setu.domain.repository.UserDAO
 import org.jetbrains.exposed.sql.SchemaUtils
 import org.joda.time.DateTime
 
-val nonExistingUserId = Integer.MIN_VALUE
+const val nonExistingId = Integer.MIN_VALUE
 const val nonExistingEmail = "112233445566778testUser@xxxxx.xx"
 const val validName = "Test User 1"
 const val validEmail = "testuser1@test.com"
 const val updatedName = "Updated Name"
 const val updatedEmail = "Updated Email"
 
+const val validActivityDescription = "Test Activity Description 1"
+const val validActivityCalories = 100
+val validActivityStarted: DateTime = DateTime.now()
+const val validActivityDuration = 1.0
+const val updatedActivityDescription = "Updated Activity Description"
+val updatedActivityStarted: DateTime = DateTime.now()-1000
+const val updatedActivityDuration = 2.0
+const val updatedActivityCalories = 200
 
 val users = arrayListOf<User>(
     User(name = "Alice Wonderland", email = "alice@wonderland.com", id = 1),
@@ -33,16 +41,16 @@ val activities = arrayListOf<Activity>(
 fun populateUserTable(): UserDAO {
     SchemaUtils.create(Users)
     val userDAO = UserDAO()
-    userDAO.save(users.get(0))
-    userDAO.save(users.get(1))
-    userDAO.save(users.get(2))
+    userDAO.save(users[0])
+    userDAO.save(users[1])
+    userDAO.save(users[2])
     return userDAO
 }
 fun populateActivityTable(): ActivityDAO {
     SchemaUtils.create(Activities)
     val activityDAO = ActivityDAO()
-    activityDAO.save(activities.get(0))
-    activityDAO.save(activities.get(1))
-    activityDAO.save(activities.get(2))
+    activityDAO.save(activities[0])
+    activityDAO.save(activities[1])
+    activityDAO.save(activities[2])
     return activityDAO
 }
