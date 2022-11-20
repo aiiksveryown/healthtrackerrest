@@ -9,18 +9,27 @@ class DbConfig{
 
     //NOTE: you need the ?sslmode=require otherwise you get an error complaining about the ssl certificate
     fun getDbConnection() :Database{
+
+        val logger = KotlinLogging.logger {}
         logger.info{"Starting DB Connection..."}
 
-        val dbConnection = Database.connect(
-            "jdbc:postgresql://ec2-18-210-64-223.compute-1.amazonaws.com:5432/d9rig16jghm5lr?sslmode=require",
-            driver = "org.postgresql.Driver",
-            user = "onypsuyppefkzx",
-            password = "63dec05445406a1d46d4a8c4ed7c7582c9d0ece41d3b70df1be8975be7eaf675")
+        val PGUSER = "maayrkmw"
+        val PGPASSWORD = "7gGbJs4SLYItUKzmdX7tMwOXVRv0tmKU"
+        val PGHOST = "lucky.db.elephantsql.com"
+        val PGPORT = "5432"
+        val PGDATABASE = "maayrkmw"
 
+        //url format should be jdbc:postgresql://host:port/database
+        val url = "jdbc:postgresql://$PGHOST:$PGPORT/$PGDATABASE"
 
-        logger.info{"DbConfig name = " + dbConnection.name}
-        logger.info{"DbConfig url = " + dbConnection.url}
+        val dbConfig = Database.connect(url,
+            driver="org.postgresql.Driver",
+            user = PGUSER,
+            password = PGPASSWORD
+        )
 
-        return dbConnection
+        logger.info{"db url - connection: " + dbConfig.url}
+
+        return dbConfig
     }
 }
