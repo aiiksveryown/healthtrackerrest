@@ -6,8 +6,9 @@ import ie.setu.utils.mapToUser
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.transactions.transaction
 
-
-
+/**
+ * UserDAO is a repository class that handles all the database operations related to the User entity.
+ */
 class UserDAO {
     fun getAll() : ArrayList<User>{
         println("Getting users dao")
@@ -54,6 +55,11 @@ class UserDAO {
         }
     }
 
+    /**
+     * This method is used to create a new user in the database.
+     * @param user The user object to be created in the database.
+     * @return The id of the newly created user.
+     */
     fun save(user: User) : Int?{
         println("Saving user dao")
         return transaction {
