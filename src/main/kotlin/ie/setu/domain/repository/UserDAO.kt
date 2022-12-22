@@ -10,11 +10,13 @@ import org.jetbrains.exposed.sql.transactions.transaction
 
 class UserDAO {
     fun getAll() : ArrayList<User>{
+        println("Getting users dao")
         val userList: ArrayList<User> = arrayListOf()
         transaction {
             Users.selectAll().map {
                 userList.add(mapToUser(it)) }
         }
+        println(userList)
         return userList
     }
 
@@ -53,6 +55,7 @@ class UserDAO {
     }
 
     fun save(user: User) : Int?{
+        println("Saving user dao")
         return transaction {
             Users.insert {
                 it[name] = user.name

@@ -17,6 +17,7 @@ object UserController {
         responses = [OpenApiResponse("200", [OpenApiContent(Array<User>::class)])]
     )
     fun getAllUsers(ctx: Context) {
+        println("Getting users")
         val users = userDao.getAll()
         if (users.size != 0) {
             ctx.status(200)
